@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smartphone Addiction Prediction</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#050d1a;--surface:#0a1628;--card:#0f2040;--border:#1a3a6a;--cyan:#00d4ff;--cyan2:#0099cc;--green:#00ff88;--yellow:#ffd700;--red:#ff4455;--orange:#ff8c00;--text:#e0eeff;--muted:#6a8aaa;--low:#00c87a;--mod:#ffa500;--high:#ff3344;}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);background-size:40px 40px;z-index:0;}
+header{position:relative;z-index:10;background:linear-gradient(135deg,#050d1a 0%,#0a1f3d 100%);border-bottom:1px solid var(--border);padding:32px 0 28px;text-align:center;}
+.header-tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:4px;text-transform:uppercase;margin-bottom:12px;opacity:.7;}
+header h1{font-size:clamp(22px,3.5vw,38px);font-weight:700;letter-spacing:-1px;background:linear-gradient(135deg,#fff 30%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2;}
+header p{margin-top:10px;color:var(--muted);font-size:14px;font-weight:300;}
+main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:40px 20px 80px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;margin-bottom:28px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:.5;}
+.section-title{font-size:12px;font-weight:600;color:var(--cyan);letter-spacing:3px;text-transform:uppercase;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+@media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.field input,.field select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:15px;padding:12px 16px;outline:none;transition:border-color .2s,box-shadow .2s;}
+.field input:focus,.field select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,212,255,.1);}
+.field select option{background:#0a1628;}
+.upload-zone{border:2px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .25s;position:relative;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--cyan);background:rgba(0,212,255,.05);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:40px;margin-bottom:12px;}
+.upload-zone h3{font-size:15px;font-weight:600;margin-bottom:6px;}
+.upload-zone p{font-size:13px;color:var(--muted);}
+.upload-zone p span{color:var(--cyan);}
+.file-list{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;}
+.file-chip{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--cyan);}
+.predict-btn{width:100%;padding:18px;background:linear-gradient(135deg,#0066cc,var(--cyan2));border:none;border-radius:12px;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .25s;margin-top:24px;}
+.predict-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,153,204,.4);}
+.predict-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+#results{display:none;}
+.result-hero{text-align:center;padding:32px 20px;}
+.level-badge{display:inline-flex;align-items:center;gap:16px;padding:18px 36px;border-radius:60px;font-size:24px;font-weight:700;margin-bottom:20px;border:2px solid;animation:fadeIn .6s ease;}
+.level-badge.Low{color:var(--low);border-color:var(--low);background:rgba(0,200,122,.08);}
+.level-badge.Moderate{color:var(--mod);border-color:var(--mod);background:rgba(255,165,0,.08);}
+.level-badge.High{color:var(--high);border-color:var(--high);background:rgba(255,51,68,.08);}
+.level-dot{width:16px;height:16px;border-radius:50%;}
+.Low .level-dot{background:var(--low);}
+.Moderate .level-dot{background:var(--mod);}
+.High .level-dot{background:var(--high);}
+.model-agreement{display:inline-flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:24px;}
+.model-tag{padding:6px 16px;border-radius:20px;font-size:12px;border:1px solid var(--border);color:var(--muted);}
+.model-tag span{font-weight:600;color:var(--text);}
+.proba-bars{display:grid;gap:12px;margin-top:8px;}
+.proba-row{display:flex;align-items:center;gap:12px;}
+.proba-label{width:80px;font-size:13px;text-align:right;font-weight:500;}
+.proba-track{flex:1;height:10px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden;}
+.proba-fill{height:100%;border-radius:5px;transition:width 1s ease;}
+.proba-fill.Low{background:var(--low);}
+.proba-fill.Moderate{background:var(--mod);}
+.proba-fill.High{background:var(--high);}
+.proba-pct{width:45px;font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:22px;}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.chart-box h4{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;text-align:center;}
+.chart-box canvas{max-height:260px;}
+.accuracy-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;}
+.acc-card{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.acc-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.acc-value{font-size:26px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;}
+.acc-sub{font-size:10px;color:var(--muted);}
+.explanation-text{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;font-size:14px;line-height:1.9;white-space:pre-wrap;}
+.rec-list{display:grid;gap:10px;}
+.rec-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:14px;line-height:1.5;border-left:3px solid var(--cyan);transition:all .2s;}
+.rec-item:hover{border-left-color:var(--green);background:rgba(0,255,136,.03);}
+.fi-bar-list{display:grid;gap:8px;}
+.fi-row{display:flex;align-items:center;gap:10px;}
+.fi-name{width:200px;font-size:11px;color:var(--muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fi-track{flex:1;height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+.fi-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--cyan2),var(--cyan));transition:width 1s ease;}
+.fi-score{width:38px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--cyan);}
+.error-banner{background:rgba(255,50,70,.1);border:1px solid var(--red);border-radius:10px;padding:14px 18px;color:var(--red);font-size:14px;margin-top:16px;display:none;}
+#loading-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(5,13,26,.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+#loading-overlay.active{display:flex;}
+.loader-ring{width:60px;height:60px;border:3px solid rgba(0,212,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;}
+.loader-text{color:var(--cyan);font-size:13px;letter-spacing:2px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeIn .5s ease forwards;}
+</style>
+</head>
+<body>
+<div id="loading-overlay"><div class="loader-ring"></div><p class="loader-text">ANALYZING SCREENSHOTS...</p></div>
+<header>
+  <p class="header-tag">AI-Powered · XAI · Digital Wellbeing · Explainable Predictions</p>
+  <h1>Automated Smartphone Addiction Prediction</h1>
+  <p>Upload screen-time screenshots → extract features → predict addiction level with explanations & recommendations</p>
+</header>
+<main>
+  <div class="card fade-in">
+    <div class="section-title">01 — User Information</div>
+    <div class="form-row">
+      <div class="field"><label>Age</label><input type="number" id="age" placeholder="e.g. 22" min="5" max="100"/></div>
+      <div class="field"><label>Gender</label>
+        <select id="gender"><option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option><option value="Prefer not to say">Prefer not to say</option></select>
+      </div>
+    </div>
+    <div class="section-title">02 — Upload Screenshots</div>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" multiple accept="image/*,.jpg,.jpeg,.png,.webp"/>
+      <div class="upload-icon">📸</div>
+      <h3>Drop screenshots here or click to browse</h3>
+      <p>Upload <span>multiple screenshots</span> from Digital Wellbeing / Screen Time<br/>Supports <span>Android, Samsung, Realme, Redmi, iPhone, Nokia, OnePlus, Oppo</span></p>
+    </div>
+    <div class="file-list" id="fileList"></div>
+    <div class="error-banner" id="errorBanner"></div>
+    <button class="predict-btn" id="predictBtn" onclick="runPrediction()">🔍 PREDICT ADDICTION LEVEL</button>
+  </div>
+
+  <div id="results">
+    <div class="card fade-in">
+      <div class="section-title">03 — Prediction Result</div>
+      <div class="result-hero">
+        <div class="level-badge" id="levelBadge"><div class="level-dot"></div><span id="levelText">—</span></div>
+        <div class="model-agreement" id="modelAgreement"></div>
+        <div style="max-width:420px;margin:0 auto;"><div class="proba-bars" id="probaBars"></div></div>
+      </div>
+      <div class="accuracy-row" id="accuracyRow"></div>
+    </div>
+
+
+    <div class="card fade-in">
+      <div class="section-title">04 — Visual Analysis</div>
+      <div class="charts-grid">
+        <div class="chart-box"><h4>App Category Breakdown</h4><canvas id="chartPie"></canvas></div>
+        <div class="chart-box"><h4>Category Minutes Comparison</h4><canvas id="chartBar"></canvas></div>
+        <div class="chart-box"><h4>Time-of-Day Usage Distribution</h4><canvas id="chartTimeBar"></canvas></div>
+        <div class="chart-box"><h4>Addiction Probability — RF vs DT</h4><canvas id="chartProbaCompare"></canvas></div>
+        <div class="chart-box"><h4>Night vs Day Usage</h4><canvas id="chartNight"></canvas></div>
+        <div class="chart-box"><h4>Engagement Metrics vs Healthy Threshold</h4><canvas id="chartEngagement"></canvas></div>
+        <div class="chart-box" style="grid-column:1/-1"><h4>Feature Importance (Random Forest)</h4><div class="fi-bar-list" id="fiBarList"></div></div>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="section-title">05 — Explainable AI Report</div>
+      <div class="explanation-text" id="explanationText"></div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="section-title">06 — Personalised Recommendations</div>
+      <div class="rec-list" id="recList"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+Chart.defaults.color='#6a8aaa';
+Chart.defaults.borderColor='rgba(26,58,106,0.5)';
+Chart.defaults.font.family="'Space Grotesk', sans-serif";
+const COLORS={social:'#00d4ff',productivity:'#00ff88',video:'#ffd700',gaming:'#ff4455',others:'#8888cc',night:'#7b4dff',early:'#ff4455',morning:'#ffd700',afternoon:'#00d4ff',evening:'#ff8c00'};
+let charts={};
+
+const fileInput=document.getElementById('fileInput');
+const fileList=document.getElementById('fileList');
+const uploadZone=document.getElementById('uploadZone');
+fileInput.addEventListener('change',updateFileList);
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('drag-over');});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop',e=>{e.preventDefault();uploadZone.classList.remove('drag-over');fileInput.files=e.dataTransfer.files;updateFileList();});
+function updateFileList(){fileList.innerHTML='';[...fileInput.files].forEach(f=>{const c=document.createElement('div');c.className='file-chip';c.textContent='📷 '+(f.name.length>25?f.name.substring(0,22)+'...':f.name);fileList.appendChild(c);});}
+
+async function runPrediction(){
+  const files=[...fileInput.files];
+  if(!files.length){showError('Please upload at least one screenshot.');return;}
+  hideError();showLoading(true);
+  const form=new FormData();
+  form.append('age',document.getElementById('age').value||'Unknown');
+  form.append('gender',document.getElementById('gender').value||'Unknown');
+  files.forEach(f=>form.append('screenshots',f));
+  try{
+    const res=await fetch('/api/predict',{method:'POST',body:form});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||'Prediction failed');
+    renderResults(data);
+  }catch(e){showError(e.message);}
+  finally{showLoading(false);}
+}
+
+function renderResults(data){
+  const{prediction:pred,features:ft,feature_importance:fi,explanation,recommendations,model_accuracy,age,gender}=data;
+  document.getElementById('results').style.display='block';
+  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth'}),100);
+
+  const badge=document.getElementById('levelBadge');
+  badge.className='level-badge '+pred.label;
+  document.getElementById('levelText').textContent=pred.label.toUpperCase()+' RISK   ·   '+age+'yo '+gender;
+
+  document.getElementById('modelAgreement').innerHTML=`
+    <div class="model-tag">🌲 Random Forest: <span>${pred.rf_label}</span></div>
+    <div class="model-tag">🌳 Decision Tree: <span>${pred.dt_label}</span></div>
+    <div class="model-tag">${pred.rf_label===pred.dt_label?'✅ <span>Both models agree</span>':'⚠ <span>Models disagree — RF used</span>'}</div>`;
+
+  const pb=document.getElementById('probaBars');
+  pb.innerHTML=['Low','Moderate','High'].map((lbl,i)=>{
+    const pct=(pred.rf_proba[i]*100).toFixed(1);
+    return`<div class="proba-row">
+      <div class="proba-label" style="color:${i===0?'var(--low)':i===1?'var(--mod)':'var(--high)'}">${lbl}</div>
+      <div class="proba-track"><div class="proba-fill ${lbl}" style="width:${pct}%"></div></div>
+      <div class="proba-pct">${pct}%</div></div>`;}).join('');
+
+  document.getElementById('accuracyRow').innerHTML=`
+    <div class="acc-card"><div class="acc-label">Random Forest</div><div class="acc-value">${model_accuracy.rf}%</div><div class="acc-sub">Test Accuracy</div></div>
+    <div class="acc-card"><div class="acc-label">Decision Tree</div><div class="acc-value">${model_accuracy.dt}%</div><div class="acc-sub">Test Accuracy</div></div>`;
+
+
+
+  buildCharts(ft,pred,fi);
+
+  const fiSorted=Object.entries(fi).sort((a,b)=>b[1]-a[1]);
+  const maxFi=fiSorted[0][1];
+  document.getElementById('fiBarList').innerHTML=fiSorted.map(([name,score])=>{
+    const pct=(score/maxFi*100).toFixed(1);
+    const label=name.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    return`<div class="fi-row"><div class="fi-name">${label}</div><div class="fi-track"><div class="fi-fill" style="width:${pct}%"></div></div><div class="fi-score">${(score*100).toFixed(1)}%</div></div>`;}).join('');
+
+  document.getElementById('explanationText').textContent=explanation;
+  document.getElementById('recList').innerHTML=recommendations.map(r=>`<div class="rec-item">${r}</div>`).join('');
+}
+
+function buildCharts(ft,pred,fi){
+  Object.values(charts).forEach(c=>c.destroy());charts={};
+  const bg=(ctx,c)=>c;
+  charts.pie=new Chart('chartPie',{type:'doughnut',data:{labels:['Social','Productivity','Video','Gaming','Others'],datasets:[{data:[ft.social_time_min,ft.productivity_time_min,ft.video_time_min,ft.gaming_time_min,ft.others_time_min],backgroundColor:[COLORS.social,COLORS.productivity,COLORS.video,COLORS.gaming,COLORS.others],borderWidth:2,borderColor:'#0f2040',hoverOffset:6}]},options:{plugins:{legend:{position:'bottom',labels:{padding:10,font:{size:11}}}},cutout:'65%'}});
+  charts.bar=new Chart('chartBar',{type:'bar',data:{labels:['Social','Productivity','Video','Gaming','Others'],datasets:[{label:'Minutes/Day',data:[ft.social_time_min,ft.productivity_time_min,ft.video_time_min,ft.gaming_time_min,ft.others_time_min],backgroundColor:[COLORS.social,COLORS.productivity,COLORS.video,COLORS.gaming,COLORS.others],borderRadius:6,borderWidth:0}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6a8aaa'}},x:{grid:{display:false},ticks:{color:'#6a8aaa'}}}}});
+  charts.timeBar=new Chart('chartTimeBar',{type:'bar',data:{labels:['Night','Early Morn','Morning','Afternoon','Evening'],datasets:[{label:'Minutes',data:[ft.night_10pm_2am_min,ft.early_morning_2am_6am_min,ft.morning_6am_12pm_min,ft.afternoon_12pm_6pm_min,ft.evening_6pm_10pm_min],backgroundColor:[COLORS.night,COLORS.early,COLORS.morning,COLORS.afternoon,COLORS.evening],borderRadius:6,borderWidth:0}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6a8aaa'}},x:{grid:{display:false},ticks:{color:'#6a8aaa'}}}}});
+  charts.probaCompare=new Chart('chartProbaCompare',{type:'bar',data:{labels:['Low','Moderate','High'],datasets:[{label:'Random Forest',data:pred.rf_proba.map(p=>(p*100).toFixed(1)),backgroundColor:'rgba(0,212,255,.7)',borderRadius:4},{label:'Decision Tree',data:pred.dt_proba.map(p=>(p*100).toFixed(1)),backgroundColor:'rgba(0,255,136,.7)',borderRadius:4}]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%',color:'#6a8aaa'},grid:{color:'rgba(255,255,255,.05)'}},x:{grid:{display:false},ticks:{color:'#6a8aaa'}}}}});
+  const dayTime=ft.total_screen_time_min-ft.night_10pm_2am_min-ft.early_morning_2am_6am_min;
+  charts.night=new Chart('chartNight',{type:'doughnut',data:{labels:['Daytime','Late Night','Early Morning'],datasets:[{data:[Math.max(0,dayTime),ft.night_10pm_2am_min,ft.early_morning_2am_6am_min],backgroundColor:[COLORS.afternoon,COLORS.night,COLORS.early],borderWidth:2,borderColor:'#0a1628'}]},options:{plugins:{legend:{position:'bottom',labels:{padding:10,font:{size:11}}}},cutout:'60%'}});
+  charts.engagement=new Chart('chartEngagement',{type:'bar',data:{labels:['Notifications/hr','Unlocks/hr'],datasets:[{label:'Current',data:[ft.notification_per_hour,ft.unlock_frequency_per_hour],backgroundColor:[COLORS.social,COLORS.productivity],borderRadius:6},{label:'Healthy Limit (5)',data:[5,5],backgroundColor:['rgba(255,68,85,.35)','rgba(255,68,85,.35)'],borderRadius:6}]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#6a8aaa'}},x:{grid:{display:false},ticks:{color:'#6a8aaa'}}}}});
+}
+
+function showLoading(on){document.getElementById('loading-overlay').classList.toggle('active',on);document.getElementById('predictBtn').disabled=on;}
+function showError(msg){const b=document.getElementById('errorBanner');b.textContent='❌ '+msg;b.style.display='block';b.scrollIntoView({behavior:'smooth'});}
+function hideError(){document.getElementById('errorBanner').style.display='none';}
+window.addEventListener('load',async()=>{try{const r=await fetch('/api/model-info');if(r.ok){const d=await r.json();console.log('Models ready — RF:',d.rf_test_acc+'%','DT:',d.dt_test_acc+'%');}}catch(e){}});
+</script>
+</body>
+</html>
